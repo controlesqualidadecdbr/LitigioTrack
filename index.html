@@ -1,13 +1,114 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8"/>
-  <meta http-equiv="refresh" content="0; url=https://ai.studio/apps/drive/14sTZ8O4PX0UALONhzf_qDU2o7yIiiGQA?fullscreenApplet=true" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Abrindo App…</title>
-  <script>window.location.replace("https://ai.studio/apps/drive/14sTZ8O4PX0UALONhzf_qDU2o7yIiiGQA?fullscreenApplet=true");</script>
+  <title>LitígioTrack — App</title>
+  <style>
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    .loading {display:flex;align-items:center;justify-content:center;height:100vh;gap:12px;color:#374151;background:#f8fafc}
+    iframe{width:100%;height:100vh;border:0}
+    .hidden{display:none}
+    .notice{padding:16px;text-align:center;}
+    a.btn{display:inline-block;padding:8px 14px;border-radius:6px;border:1px solid #ccc;text-decoration:none;color:#111;background:#fff}
+  </style>
 </head>
 <body>
-  <p>Redirecionando... <a href="https://ai.studio/apps/drive/14sTZ8O4PX0UALONhzf_qDU2o7yIiiGQA?fullscreenApplet=true">Abrir app</a></p>
+  <div id="mount">
+    <div id="loading" class="loading">
+      <div>
+        <div style="font-size:18px;font-weight:600">Abrindo aplicativo...</div>
+        <div style="font-size:13px;color:#6b7280;margin-top:6px">Se o app não abrir automaticamente, aguarde — iremos redirecionar.</div>
+      </div>
+    </div>
+
+    <!-- iframe de incorporação (será mostrado se permitido pelo servidor) -->
+    <iframe id="appFrame" class="hidden" src="" allowfullscreen sandbox="allow-forms allow-scripts allow-same-origin allow-popups"></iframe>
+
+    <!-- fallback manual caso algo falhe -->
+    <div id="fallback" class="notice hidden">
+      <p>Não foi possível incorporar o app (o site bloqueia exibição em iframe). <br>
+      Clique no botão abaixo para abrir diretamente no ai.studio:</p>
+      <p><a id="openLink" class="btn" href="#" target="_blank" rel="noopener">Abrir app no ai.studio</a></p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // URL do seu app no ai.studio (coloque exatamente a sua)
+      const APP_URL = "https://ai.studio/apps/drive/14sTZ8O4PX0UALONhzf_qDU2o7yIiiGQA?fullscreenApplet=true";
+
+      const iframe = document.getElementById('appFrame');
+      const loading = document.getElementById('loading');
+      const fallback = document.getElementById('fallback');
+      const openLink = document.getElementById('openLink');
+
+      openLink.href = APP_URL;
+
+      // tentamos carregar no iframe
+      iframe.src = APP_URL;
+
+      // ajudam a detectar se o iframe conseguiu carregar conteúdo
+      // abordagem: escutar events e, se 'load' disparar, verificar se temos acesso ao contentWindow (pode dar cross-origin)
+      let loadSucceeded = false;
+      const timerFallback = setTimeout(() => {
+        if (!loadSucceeded) showFallback();
+      }, 3000); // se após 3s não detectamos load bem sucedido, fallback
+
+      // tentamos escutar o evento load
+      iframe.addEventListener('load', () => {
+        // Tentativa de checar se iframe foi renderizado sem ser bloqueado.
+        // Se bloqueado por X-Frame-Options, 'load' pode ainda disparar, mas acesso a contentWindow pode ser restrito.
+        try {
+          // tentamos acessar a propriedade href do location do iframe
+          const cw = iframe.contentWindow;
+          // se contentWindow e document existirem e não lançarem, consideramos ok
+          // Nota: muitos sites com XFO não permitem acesso, e isso lança um erro; tratamos no catch.
+          if (cw && cw.location) {
+            // sucesso — mostramos o iframe
+            loadSucceeded = true;
+            clearTimeout(timerFallback);
+            loading.classList.add('hidden');
+            fallback.classList.add('hidden');
+            iframe.classList.remove('hidden');
+            return;
+          }
+        } catch (e) {
+          // acesso cross-origin — mas pode ser que o iframe esteja visível e correto.
+          // Vamos verificar tamanho do iframe content (heurística): se iframe.offsetHeight > 0, provavelmente foi renderizado.
+          if (iframe.offsetHeight > 0) {
+            loadSucceeded = true;
+            clearTimeout(timerFallback);
+            loading.classList.add('hidden');
+            fallback.classList.add('hidden');
+            iframe.classList.remove('hidden');
+            return;
+          }
+          // se chegamos aqui, provavelmente foi bloqueado.
+          showFallback();
+        }
+      });
+
+      // Se ocorrer erro de rede (rare), exibir fallback
+      iframe.addEventListener('error', () => {
+        showFallback();
+      });
+
+      function showFallback() {
+        clearTimeout(timerFallback);
+        loading.classList.add('hidden');
+        iframe.classList.add('hidden');
+        fallback.classList.remove('hidden');
+
+        // também auto-redireciona em 2.5s para a URL externa (opcional)
+        setTimeout(() => {
+          window.location.replace(APP_URL);
+        }, 2500);
+      }
+
+      // Em ambientes onde o iframe nunca carrega, garantimos fallback após timeout
+      // (o timeout já definido cuida disso)
+    })();
+  </script>
 </body>
 </html>
